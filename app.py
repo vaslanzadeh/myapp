@@ -320,4 +320,4 @@ def update_plots(file1, file2, color_columns, x_threshold, y_threshold):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(debug=True) 
+    app.run_server(debug=True, port=int(os.getenv("PORT", 8051)), host="0.0.0.0")
