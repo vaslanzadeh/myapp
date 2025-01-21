@@ -1,12 +1,36 @@
+import os
 import dash
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Input, Output, dcc, html
-import os
+
+name_map = {
+    'a07BindR1': 'mAb 83-7 binding score rep 1',
+    'a07BindR2': 'mAb 83-7 binding score rep 2',
+    'a14BindR1': 'mAb 83-14 binding score rep 1',
+    'a14BindR2': 'mAb 83-14 binding score rep 2',
+    'baseSignR1': 'base signalling score rep 1',
+    'baseSignR2': 'base signalling score rep 2',
+    'insBind_avg': 'insulin binding score',
+    'a07Bind_avg': 'mAb 83-7 binding score',
+    'a14Bind_avg': 'mAb 83-14 binding score',
+    'insSign_avg': 'insulin signalling score',
+    's597Sign_avg': 's597 signalling score',
+    'baseSign_avg': 'base signalling score',
+    'a07Sign_avg': 'mAb 83-7 signalling score',
+    'a14Sign_avg': 'mAb 83-14 signalling score',
+    'a07a14_Bind_avg': 'cell surface expression score',
+    'a07a14_Sign_avg': 'average antibodies signalling score',
+    'mAb_25_49_v2_updated': 'mAb 25-49 binding score',
+    'mAb_18_43_updated': 'mAb 18-43 binding score',
+    'mAb_18_146_updated': 'mAb 18-146 binding score',
+    'mAb_49_9': 'mAb 47-9 binding score',
+    'mAb_83_19_updated': 'mAb 83-19 binding score',
+    'mAb_83_12_updated': 'mAb 83-12 binding score'}
 
 # Specify directory containing CSV files
-data_directory = "data/"
+data_directory = "."
 
 # Load all CSV files into a dictionary of DataFrames based on filename
 data_files = {
@@ -45,6 +69,16 @@ app.layout = html.Div([
         multi=True,
     ),
 
+    # Inputs for annotation thresholds
+    html.Div([
+        html.Label("Set X Threshold (annotate points with x less than):"),
+        dcc.Input(id="x-threshold", type="number", value=-0.1, step=0.01),
+
+        html.Label("Set Y Threshold (annotate points with y greater than):"),
+        dcc.Input(id="y-threshold", type="number", value=-0.2, step=0.01),
+    ], style={"margin-top": "20px", "margin-bottom": "20px"}),
+
+
     # Scatter plot display
     dcc.Graph(id="scatter-plot"),
 
@@ -65,12 +99,14 @@ app.layout = html.Div([
      Output("heatmap2", "figure")],
     [Input("file1-dropdown", "value"),
      Input("file2-dropdown", "value"),
-     Input("color-dropdown", "value")]
+     Input("color-dropdown", "value"),
+     Input("x-threshold", "value"),
+     Input("y-threshold", "value")]
 )
-def update_plots(file1, file2, color_columns):
+
+def update_plots(file1, file2, color_columns, x_threshold, y_threshold):
     if file1 is None or file2 is None or file1 == file2:
         return {}, {}, {}
-
     # Load and merge data based on `position`
     df1 = data_files[file1]
     df2 = data_files[file2]
@@ -118,14 +154,20 @@ def update_plots(file1, file2, color_columns):
             bgcolor="rgba(255,255,255,0.7)"
         )
         for _, row in merged_df[merged_df["color"] != "gray"].iterrows()
+        if row["median_score_1"] < x_threshold and row["median_score_2"] > y_threshold
     ]
     scatter_fig.update_layout(annotations=annotations)
 
+
+    def get_descriptive_name(filename):
+        base_name = filename.replace('.csv', '')  # Remove the .csv extension
+        return name_map.get(base_name, base_name)  # Use the mapped name or fallback to base_name
+
     # Set white background, gridlines, axis labels, plot border, and larger tick font size
     scatter_fig.update_layout(
-        title=f"Scatter Plot of {file1} vs {file2}",
-        xaxis_title=f"<b>Median Score ({file1})</b>",
-        yaxis_title=f"<b>Median Score ({file2})</b>",
+        title=f"{get_descriptive_name(file1)} vs {get_descriptive_name(file2)}",
+        xaxis_title=f"<b>{get_descriptive_name(file1)}<b>",
+        yaxis_title=f"<b>{get_descriptive_name(file2)}<b>",
         xaxis=dict(showgrid=True, gridcolor='lightgray', tickfont=dict(size=14)),  # Increase tick size
         yaxis=dict(showgrid=True, gridcolor='lightgray', tickfont=dict(size=14)),  # Increase tick size
         plot_bgcolor='white',
@@ -278,6 +320,4 @@ def update_plots(file1, file2, color_columns):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(debug=True, port=int(os.getenv("PORT", 8051)), host="0.0.0.0")
-
-
+    app.run_server(debug=True) 
