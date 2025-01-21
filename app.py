@@ -31,7 +31,8 @@ name_map = {
 
 
 # Specify directory containing CSV files
-data_directory = "."
+data_directory = "data/"
+
 
 # Load all CSV files into a dictionary of DataFrames based on filename
 data_files = {
