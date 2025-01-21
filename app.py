@@ -29,6 +29,7 @@ name_map = {
     'mAb_83_19_updated': 'mAb 83-19 binding score',
     'mAb_83_12_updated': 'mAb 83-12 binding score'}
 
+
 # Specify directory containing CSV files
 data_directory = "."
 
@@ -69,16 +70,6 @@ app.layout = html.Div([
         multi=True,
     ),
 
-    # Inputs for annotation thresholds
-    html.Div([
-        html.Label("Set X Threshold (annotate points with x less than):"),
-        dcc.Input(id="x-threshold", type="number", value=-0.1, step=0.01),
-
-        html.Label("Set Y Threshold (annotate points with y greater than):"),
-        dcc.Input(id="y-threshold", type="number", value=-0.2, step=0.01),
-    ], style={"margin-top": "20px", "margin-bottom": "20px"}),
-
-
     # Scatter plot display
     dcc.Graph(id="scatter-plot"),
 
@@ -99,14 +90,12 @@ app.layout = html.Div([
      Output("heatmap2", "figure")],
     [Input("file1-dropdown", "value"),
      Input("file2-dropdown", "value"),
-     Input("color-dropdown", "value"),
-     Input("x-threshold", "value"),
-     Input("y-threshold", "value")]
+     Input("color-dropdown", "value")]
 )
-
-def update_plots(file1, file2, color_columns, x_threshold, y_threshold):
+def update_plots(file1, file2, color_columns):
     if file1 is None or file2 is None or file1 == file2:
         return {}, {}, {}
+
     # Load and merge data based on `position`
     df1 = data_files[file1]
     df2 = data_files[file2]
@@ -154,10 +143,8 @@ def update_plots(file1, file2, color_columns, x_threshold, y_threshold):
             bgcolor="rgba(255,255,255,0.7)"
         )
         for _, row in merged_df[merged_df["color"] != "gray"].iterrows()
-        if row["median_score_1"] < x_threshold and row["median_score_2"] > y_threshold
     ]
     scatter_fig.update_layout(annotations=annotations)
-
 
     def get_descriptive_name(filename):
         base_name = filename.replace('.csv', '')  # Remove the .csv extension
